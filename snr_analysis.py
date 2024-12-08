@@ -10,19 +10,21 @@ def calculate_snr(original, compressed):
         return np.inf  # infinite SNR for perfect reconstruction
     return 10 * np.log10(signal_power / noise_power)
 
-# list of files, compression algorithms, and file sizes (in MB)
+# list of files, compression algorithms, file sizes (in MB), durations (in seconds), and bit rates (in kbps)
 files = [
-    {"original": "elliot-og.wav", "compressed": "elliot-mp3.mp3", "algorithm": "ELLIOT-MP3", "size_mb": 2.53},
-    {"original": "flow-og.wav", "compressed": "flow-aac.aac", "algorithm": "FLOW-AAC", "size_mb": 3.14},
-    {"original": "sinatra-og.wav", "compressed": "sinatra-flac.flac", "algorithm": "SINATRA-FLAC", "size_mb": 16.00},
-    {"original": "waltz-og.wav", "compressed": "waltz-ogg.ogg", "algorithm": "WALTZ-OGG", "size_mb": 2.60},
+    {"original": "elliot-og.wav", "compressed": "elliot-mp3.mp3", "algorithm": "ELLIOT-MP3", "size_mb": 2.53, "duration_sec": 2 * 60 + 36, "bitrate_kbps": 128},
+    {"original": "flow-og.wav", "compressed": "flow-aac.aac", "algorithm": "FLOW-AAC", "size_mb": 3.14, "duration_sec": 3 * 60 + 25, "bitrate_kbps": 160},
+    {"original": "sinatra-og.wav", "compressed": "sinatra-flac.flac", "algorithm": "SINATRA-FLAC", "size_mb": 16.00, "duration_sec": 3 * 60 + 14, "bitrate_kbps": 1000},
+    {"original": "waltz-og.wav", "compressed": "waltz-ogg.ogg", "algorithm": "WALTZ-OGG", "size_mb": 2.60, "duration_sec": 3 * 60 + 50, "bitrate_kbps": 192},
 ]
 
-# initialize lists for storing SNR values and labels
+# initialize lists for storing SNR values, labels, file sizes, durations, and bit rates
 compressed_snr_values = []
 wav_snr_values = []
 algorithm_labels = []
 file_sizes = []
+durations = []
+bit_rates = []
 
 # loop through files and calculate SNR for each file pair
 for i, file in enumerate(files, start=1):
@@ -43,6 +45,8 @@ for i, file in enumerate(files, start=1):
     wav_snr_values.append(wav_snr)
     algorithm_labels.append(file["algorithm"])
     file_sizes.append(file["size_mb"])
+    durations.append(file["duration_sec"] / 60)  # convert seconds to minutes
+    bit_rates.append(file["bitrate_kbps"])
 
     # print results
     print(f"Compressed SNR for {file['algorithm']} ({file['compressed']}): {compressed_snr:.2f} dB")
@@ -58,7 +62,7 @@ bars = plt.bar(range(len(wav_visual_snr_values)), wav_visual_snr_values, color='
 plt.xticks(range(len(files)), [file['original'] for file in files], rotation=45, ha="right")
 plt.xlabel("Original WAV Files", fontsize=14)
 plt.ylabel("SNR (dB)", fontsize=14)
-plt.title("Signal-to-Noise Ratio (SNR) of Original WAV Files (Ranges from 27.9MB -38.7MB)", fontsize=16)
+plt.title("Signal-to-Noise Ratio (SNR) of Original WAV Files", fontsize=16)
 plt.grid(axis="y", linestyle="--", alpha=0.7)
 
 # add labels for WAV bars
@@ -68,6 +72,9 @@ for i, bar in enumerate(bars):
         plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 2, "∞", ha="center", va="bottom", fontsize=12, color="red")
     else:
         plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5, f"{value:.2f}", ha="center", va="bottom", fontsize=12)
+
+plt.tight_layout()
+
 
 # plot combined SNR and file size comparison
 fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -90,16 +97,31 @@ for i, (value, bar) in enumerate(zip(compressed_snr_values, bars)):
 
 # plot file sizes (secondary y-axis)
 ax2 = ax1.twinx()
-file_size_bars = ax2.plot(range(len(file_sizes)), file_sizes, color='orange', marker='o', markersize=8, linestyle='-', label="File Size (MB, in absolute value)")
+file_size_bars = ax2.plot(range(len(file_sizes)), file_sizes, color='orange', marker='o', markersize=8, linestyle='-', label="File Size (MB)")
 ax2.set_ylabel("File Size (MB)", fontsize=14, color='orange')
 
 # add legend
 fig.legend(loc="upper right", bbox_to_anchor=(0.85, 0.9), bbox_transform=ax1.transAxes)
 
-# adjust y-axis for combined graph
-min_y = min([v for v in compressed_snr_values if not np.isnan(v)]) - 5
-max_y = max(compressed_visual_snr_values) + 10
-ax1.set_ylim(min_y, max_y)
+plt.tight_layout()
 
+
+# plot file durations
+plt.figure(figsize=(10, 6))
+plt.bar(algorithm_labels, durations, color='purple', alpha=0.7)
+plt.xlabel("Compression Algorithm", fontsize=14)
+plt.ylabel("Duration (minutes)", fontsize=14)
+plt.title("File Durations of Compressed Files", fontsize=16)
+plt.grid(axis="y", linestyle="--", alpha=0.7)
+plt.tight_layout()
+
+
+# plot bit rates
+plt.figure(figsize=(10, 6))
+plt.bar(algorithm_labels, bit_rates, color='orange', alpha=0.7)
+plt.xlabel("Compression Algorithm", fontsize=14)
+plt.ylabel("Bit Rate (kbps)", fontsize=14)
+plt.title("Bit Rates of Compressed Files", fontsize=16)
+plt.grid(axis="y", linestyle="--", alpha=0.7)
 plt.tight_layout()
 plt.show()
